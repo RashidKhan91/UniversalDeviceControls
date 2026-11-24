@@ -2,39 +2,77 @@
 
 A Kotlin Android library for inspecting and changing a deliberately limited set of app-window and system settings. Each request returns a structured status, the strategy attempted, and the state Android reports afterward. It does not bypass Android permissions or device policy.
 
-> **Status:** early development (`0.1.0`). Validate on your supported OEMs and management modes before production use. This project has not been published to a Maven repository.
+> **Version:** `0.1.0`. Available through JitPack as `com.github.RashidKhan91.UniversalDeviceControls:devicecontrols:0.1.0`. Validate on your supported OEMs and management modes before production use.
 
 ## Modules
 
 - `devicecontrols`: reusable Android library (`dev.universal.devicecontrols`)
 - `sample`: small interactive app that displays current values and outcomes
 
-## Add to an app
+## Install in a new Android app
 
-For a local checkout, add `include(":devicecontrols")` to `settings.gradle.kts` and `implementation(project(":devicecontrols"))` to the app module. For a published release, use the repository and coordinates configured by that release; no remote coordinates are promised for this development build.
+Add JitPack to the repositories in your project-level `settings.gradle.kts`:
 
 ```kotlin
-val controls = DeviceControlManager(activity)
-lifecycleScope.launch {
-    val result = controls.disable(DeviceControlKey.SCREENSHOT)
-    if (result.isSuccess) {
-        // The host Activity window now carries FLAG_SECURE.
-    } else {
-        Log.w("Controls", "${result.status}: ${result.message}")
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        maven(url = "https://jitpack.io")
     }
 }
 ```
 
-For typed settings:
+Add the library to the app module's `build.gradle.kts`:
+
+```kotlin
+dependencies {
+    implementation("com.github.RashidKhan91.UniversalDeviceControls:devicecontrols:0.1.0")
+}
+```
+
+Sync Gradle. The library requires `minSdk 26` or higher. JitPack uses the multi-module coordinate format `group:module:version`; `devicecontrols` is the library module. See the [JitPack Android guide](https://docs.jitpack.io/android/) for repository setup details.
+
+Initialize it with an Activity and call its suspend API from a coroutine, for example from `lifecycleScope`:
+
+```kotlin
+import androidx.lifecycle.lifecycleScope
+import dev.universal.devicecontrols.DeviceControlManager
+import dev.universal.devicecontrols.model.DeviceControlKey
+import dev.universal.devicecontrols.model.DeviceControlValue
+import kotlinx.coroutines.launch
+
+private val controls by lazy { DeviceControlManager(this) }
+
+private fun blockScreenshots() {
+    lifecycleScope.launch {
+        val result = controls.disable(DeviceControlKey.SCREENSHOT)
+        statusText.text = "${result.status}: ${result.message}"
+        if (result.isSuccess) {
+            // Screenshot blocking was verified for this Activity's window.
+        }
+    }
+}
+```
+
+To inspect current state or configure a typed setting:
 
 ```kotlin
 lifecycleScope.launch {
+    val wifi = controls.get(DeviceControlKey.WIFI)
+    statusText.text = "Wi-Fi: ${wifi.actualValue ?: wifi.status}"
+
     val brightness = controls.set(
         DeviceControlKey.SCREEN_BRIGHTNESS,
         DeviceControlValue.Brightness(level = 160, automatic = false)
     )
-    val timezone = controls.set(DeviceControlKey.TIME_ZONE, DeviceControlValue.TextValue("Asia/Karachi"))
-    val wifi = controls.get(DeviceControlKey.WIFI)
+    statusText.text = "${brightness.status}: ${brightness.message}"
+
+    if (brightness.requiresSettings) {
+        controls.openSettings(DeviceControlKey.SCREEN_BRIGHTNESS)
+        // When the user returns, call get() again to verify the applied state.
+    }
 }
 ```
 
@@ -84,9 +122,9 @@ Requires JDK 17+ and Android SDK platform 36 for the checked-in configuration.
 
 The sample is `sample/`; local unit tests cover result/model invariants, and Android instrumentation tests cover the Activity window flags. Instrumentation tests require an emulator/device. Hardware, rooted Magisk/KernelSU, Device Owner/Profile Owner, and OEM-specific integration still require physical/device-farm validation. CI cannot prove those privileged runtime cases.
 
-## Publish configuration
+## Publishing configuration
 
-The library has a Maven Publish publication named `release`. It defaults to a local repository under `devicecontrols/build/maven-repo`. Configure `publishingUrl`, and optionally `publishingUser` / `publishingPassword` Gradle properties for an authorized Maven repository. No credentials or remote publication endpoint are checked in. Run `:devicecontrols:publishReleasePublicationToConfiguredRepository` only when the endpoint and release are ready.
+For maintainers publishing to a Maven host other than JitPack, the library has a Maven Publish publication named `release`. It defaults to a local repository under `devicecontrols/build/maven-repo`. Configure `publishingUrl`, and optionally `publishingUser` / `publishingPassword` Gradle properties for an authorized Maven repository. No credentials or remote publication endpoint are checked in. Run `:devicecontrols:publishReleasePublicationToConfiguredRepository` only when the endpoint and release are ready.
 
 ## License and contribution
 
