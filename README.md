@@ -2,7 +2,7 @@
 
 A Kotlin Android library for inspecting and changing a deliberately limited set of app-window and system settings. Each request returns a structured status, the strategy attempted, and the state Android reports afterward. It does not bypass Android permissions or device policy.
 
-> **Version:** `0.1.0`. Available through JitPack as `com.github.RashidKhan91.UniversalDeviceControls:devicecontrols:0.1.0`. Validate on your supported OEMs and management modes before production use.
+> **Version:** `0.1.0`. Available through JitPack as `com.github.RashidKhan91:UniversalDeviceControls:0.1.0`. Validate on your supported OEMs and management modes before production use.
 
 ## Modules
 
@@ -28,7 +28,7 @@ Add the library to the app module's `build.gradle.kts`:
 
 ```kotlin
 dependencies {
-    implementation("com.github.RashidKhan91.UniversalDeviceControls:devicecontrols:0.1.0")
+    implementation("com.github.RashidKhan91:UniversalDeviceControls:0.1.0")
 }
 ```
 
