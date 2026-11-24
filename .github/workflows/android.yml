@@ -1,0 +1,21 @@
+name: Android CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: wrapper
+      - run: yes | sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - run: ./gradlew --no-daemon :devicecontrols:testDebugUnitTest :devicecontrols:assembleAndroidTest :devicecontrols:assembleRelease :sample:assembleDebug :devicecontrols:lintRelease :sample:lintDebug
