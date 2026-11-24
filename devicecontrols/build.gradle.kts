@@ -5,8 +5,21 @@ plugins {
     `maven-publish`
 }
 
-group = providers.gradleProperty("GROUP").orElse("dev.universal").get()
-version = providers.gradleProperty("VERSION_NAME").orElse("0.1.0").get()
+
+val isJitPackBuild = System.getenv("JITPACK") == "true"
+
+group = if (isJitPackBuild) {
+    "com.github.RashidKhan91.UniversalDeviceControls"
+} else {
+    providers.gradleProperty("GROUP").orElse("dev.universal").get()
+}
+
+version = if (isJitPackBuild) {
+    System.getenv("VERSION") ?: "0.1.0"
+} else {
+    providers.gradleProperty("VERSION_NAME").orElse("0.1.0").get()
+}
+
 
 android {
     namespace = "dev.universal.devicecontrols"
